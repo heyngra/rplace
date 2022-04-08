@@ -1,0 +1,7 @@
+name: Rplace
+version: '${project.version}'
+main: heyn.rplace.Rplace
+api-version: 1.18
+authors: [ heyn ]
+description: r/place but it's minecraft!
+website: https://place.heyn.live
