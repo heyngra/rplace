@@ -2,6 +2,7 @@ package heyn.rplace;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -10,16 +11,16 @@ import org.json.simple.parser.ParseException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 
 public class updateCanvas implements Runnable{
-    public void run() {
+
+    public static String get_request(String url1) {
         try {
-            URL url = new URL("http://localhost:8000/api/pixels");
+            URL url = new URL(url1);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             int status = con.getResponseCode();
@@ -33,15 +34,54 @@ public class updateCanvas implements Runnable{
                 }
                 in.close();
                 //Bukkit.getLogger().info(content.toString());
-                JSONParser parser = new JSONParser();
-                JSONObject js = (JSONObject) parser.parse(content.toString());
-                replace((JSONArray) js.get("pixels"));
+                return content.toString();
             }
             con.disconnect();
         }
-        catch (IOException | ParseException e) {
+        catch (IOException e) {
             e.printStackTrace();
         }
+        return url1;
+    }
+    public static String post_request(String url1, String jsonInputString) {
+        StringBuilder response = new StringBuilder();
+        try {
+            URL url = new URL(url1);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+            con.setDoOutput(true);
+            //Bukkit.getLogger().info(jsonInputString);
+            byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+            int length = input.length;
+            con.setFixedLengthStreamingMode(length);
+            con.connect();
+            try (OutputStream os = con.getOutputStream()) {
+                os.write(input, 0, input.length);
+            }
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+            }
+            con.disconnect();
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+        Bukkit.getLogger().info(response.toString());
+        return (response.toString());
+    }
+    public void run() {
+        JSONParser parser = new JSONParser();
+        JSONObject js = null;
+        try {
+            js = (JSONObject) parser.parse(updateCanvas.get_request("http://localhost:8000/api/pixels"));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        assert js != null;
+        replace((JSONArray) js.get("pixels"));
     }
     private static void replace(JSONArray content) {
         World w = Bukkit.getServer().getWorlds().get(0);
@@ -54,29 +94,13 @@ public class updateCanvas implements Runnable{
         });
     }
     public static void forcerun() {
+        JSONObject js = null;
         try {
-            URL url = new URL("http://localhost:8000/api/pixels");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-            int status = con.getResponseCode();
-            if (status == 200) {
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(con.getInputStream()));
-                String inputLine;
-                StringBuffer content = new StringBuffer();
-                while ((inputLine = in.readLine()) != null) {
-                    content.append(inputLine);
-                }
-                in.close();
-                //Bukkit.getLogger().info(content.toString());
-                JSONParser parser = new JSONParser();
-                JSONObject js = (JSONObject) parser.parse(content.toString());
-                replace((JSONArray) js.get("pixels"));
-            }
-            con.disconnect();
-        }
-        catch (IOException | ParseException e) {
+            js = (JSONObject) Rplace.parser.parse(updateCanvas.get_request("http://localhost:8000/api/pixels"));
+        } catch (ParseException e) {
             e.printStackTrace();
         }
+        assert js != null;
+        replace((JSONArray) js.get("pixels"));
     }
 }

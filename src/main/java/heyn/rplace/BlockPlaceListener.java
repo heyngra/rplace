@@ -12,6 +12,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class BlockPlaceListener implements Listener {
     private final Inventory inv;
@@ -69,6 +71,9 @@ public class BlockPlaceListener implements Listener {
         Block b1 = e.getPlayer().getWorld().getBlockAt(e.getBlock().getLocation().getBlockX(), e.getBlock().getLocation().getBlockY()-1, e.getBlock().getLocation().getBlockZ());
         if (e.getBlock().getType() == Material.STONE) {
             e.setCancelled(true);
+            if (Rplace.cooldowns.containsKey(e.getPlayer().getUniqueId())) {
+                return;
+            }
             e.getPlayer().openInventory(inv);
             if (placer.containsKey(e.getPlayer())) {
                 placer.remove(e.getPlayer());
@@ -88,43 +93,19 @@ public class BlockPlaceListener implements Listener {
         for (Integer i : concrete.colors.keySet()) {
             reversedHashMap.put(concrete.colors.get(i), i);
         }
+        String resp = updateCanvas.post_request("http://localhost:8000/api/add", "color="+reversedHashMap.get(clickedItem.getType())+"&pos_x="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getX()+"&pos_z="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getZ()+"&auth="+Rplace.authTokens.get(Objects.requireNonNull(((Player) e.getWhoClicked()).getPlayer()).getUniqueId()));
         try {
-            URL url = new URL("http://localhost:8000/api/add");
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-            con.setDoOutput(true);
-            JSONObject jso = new JSONObject();
-            /*jso.put("color", reversedHashMap.get(clickedItem.getType()));
-            jso.put("pos_x", placer.get(((Player) e.getWhoClicked()).getPlayer()).getX());
-            jso.put("pos_z", placer.get(((Player) e.getWhoClicked()).getPlayer()).getZ());
-            jso.put("uuid", ((Player) e.getWhoClicked()).getPlayer().getUniqueId().toString());
-            //String jsonInputString = "{\"color\":"+reversedHashMap.get(clickedItem.getType())+",\"pos_x\":"+placer.get(((Player) e.getWhoClicked()).getPlayer()).getX()+",\"pos_z\":"+placer.get(((Player) e.getWhoClicked()).getPlayer()).getX()+",\"uuid\":\""+((Player) e.getWhoClicked()).getPlayer().getUniqueId() .toString()+"\"}";
-            String jsonInputString = jso.toString();*/
-            String jsonInputString = "color="+reversedHashMap.get(clickedItem.getType())+"&pos_x="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getX()+"&pos_z="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getZ()+"&uuid="+((Player) e.getWhoClicked()).getPlayer().getUniqueId().toString();
-            Bukkit.getLogger().info(jsonInputString);
-            byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
-            int length = input.length;
-            con.setFixedLengthStreamingMode(length);
-            con.connect();
-            try(OutputStream os = con.getOutputStream()) {
-                os.write(input, 0, input.length);
+            JSONObject jsresp = (JSONObject) Rplace.parser.parse(resp);
+            String status = (String) jsresp.get("status");
+            if (Objects.equals(status, "success")) {
+                Rplace.cooldowns.putIfAbsent(e.getWhoClicked().getUniqueId(), 1200);
+            } else if (Objects.equals(status, "On Cooldown!")) {
+                Rplace.cooldowns.putIfAbsent(e.getWhoClicked().getUniqueId(), Math.toIntExact((Long) jsresp.getOrDefault("time_remaining", 1200)));
             }
-            try(BufferedReader br = new BufferedReader(
-                    new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-                StringBuilder response = new StringBuilder();
-                String responseLine = null;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-                System.out.println(response.toString());
-            }
-            con.disconnect();
-            updateCanvas.forcerun();
-            inv.close();
-            }
-        catch (IOException err) {
-            err.printStackTrace();
+        } catch (ParseException ex) {
+            ex.printStackTrace();
         }
-
+        updateCanvas.forcerun();
+        inv.close();
     }
 }
