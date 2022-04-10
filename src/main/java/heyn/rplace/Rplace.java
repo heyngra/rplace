@@ -27,7 +27,7 @@ public final class Rplace extends JavaPlugin {
     static {
         UUID serverUUID1;
         try {
-            serverUUID1 = UUID.fromString((String) (((JSONObject) parser.parse(updateCanvas.get_request("http://localhost:8000/api/serverid"))).get("uuid")));
+            serverUUID1 = UUID.fromString((String) (((JSONObject) parser.parse(updateCanvas.get_request("https://place.heyn.live/api/serverid"))).get("uuid")));
         } catch (ParseException e) {
             serverUUID1 = null;
             e.printStackTrace();

@@ -8,6 +8,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import javax.annotation.Nullable;
+import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,7 +23,7 @@ public class updateCanvas implements Runnable{
     public static String get_request(String url1) {
         try {
             URL url = new URL(url1);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
             con.setRequestMethod("GET");
             int status = con.getResponseCode();
             if (status == 200) {
@@ -47,7 +49,7 @@ public class updateCanvas implements Runnable{
         StringBuilder response = new StringBuilder();
         try {
             URL url = new URL(url1);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
             con.setRequestMethod("POST");
             con.setDoOutput(true);
             //Bukkit.getLogger().info(jsonInputString);
@@ -69,14 +71,13 @@ public class updateCanvas implements Runnable{
         } catch(IOException e) {
             e.printStackTrace();
         }
-        Bukkit.getLogger().info(response.toString());
         return (response.toString());
     }
     public void run() {
         JSONParser parser = new JSONParser();
         JSONObject js = null;
         try {
-            js = (JSONObject) parser.parse(updateCanvas.get_request("http://localhost:8000/api/pixels"));
+            js = (JSONObject) parser.parse(updateCanvas.get_request("https://place.heyn.live/api/pixels"));
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -96,7 +97,7 @@ public class updateCanvas implements Runnable{
     public static void forcerun() {
         JSONObject js = null;
         try {
-            js = (JSONObject) Rplace.parser.parse(updateCanvas.get_request("http://localhost:8000/api/pixels"));
+            js = (JSONObject) Rplace.parser.parse(updateCanvas.get_request("https://place.heyn.live/api/pixels"));
         } catch (ParseException e) {
             e.printStackTrace();
         }

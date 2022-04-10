@@ -93,7 +93,7 @@ public class BlockPlaceListener implements Listener {
         for (Integer i : concrete.colors.keySet()) {
             reversedHashMap.put(concrete.colors.get(i), i);
         }
-        String resp = updateCanvas.post_request("http://localhost:8000/api/add", "color="+reversedHashMap.get(clickedItem.getType())+"&pos_x="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getX()+"&pos_z="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getZ()+"&auth="+Rplace.authTokens.get(Objects.requireNonNull(((Player) e.getWhoClicked()).getPlayer()).getUniqueId()));
+        String resp = updateCanvas.post_request("https://place.heyn.live/api/add", "color="+reversedHashMap.get(clickedItem.getType())+"&pos_x="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getX()+"&pos_z="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getZ()+"&auth="+Rplace.authTokens.get(Objects.requireNonNull(((Player) e.getWhoClicked()).getPlayer()).getUniqueId()));
         try {
             JSONObject jsresp = (JSONObject) Rplace.parser.parse(resp);
             String status = (String) jsresp.get("status");

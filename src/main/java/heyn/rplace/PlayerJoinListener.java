@@ -1,4 +1,5 @@
 package heyn.rplace;
+import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -14,7 +15,7 @@ public class PlayerJoinListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent e) {
         JSONObject resp = null;
         try {
-            resp = (JSONObject) Rplace.parser.parse(updateCanvas.post_request("http://localhost:8000/api/addp", "uuid="+e.getPlayer().getUniqueId()+"&serverUUID="+Rplace.serverUUID));
+            resp = (JSONObject) Rplace.parser.parse(updateCanvas.post_request("https://place.heyn.live/api/addp", "uuid="+e.getPlayer().getUniqueId()+"&serverUUID="+Rplace.serverUUID));
         } catch (ParseException ex) {
             ex.printStackTrace();
         }
@@ -24,8 +25,9 @@ public class PlayerJoinListener implements Listener {
             e.getPlayer().sendMessage("Something went wrong!");
         }
         try {
-            resp = (JSONObject) Rplace.parser.parse(updateCanvas.get_request("https://localhost:8000?auth"+Rplace.authTokens.getOrDefault(e.getPlayer().getUniqueId(), null)));
-            if (resp.get("status") == "On Cooldown!") {
+            resp = (JSONObject) Rplace.parser.parse(updateCanvas.get_request("https://place.heyn.live/api/checkcd?auth="+Rplace.authTokens.getOrDefault(e.getPlayer().getUniqueId(), null)));
+            if (((String) resp.get("status")).equals("On Cooldown!")) {
+                Rplace.cooldowns.remove(e.getPlayer().getUniqueId());
                 Rplace.cooldowns.putIfAbsent(e.getPlayer().getUniqueId(), Math.toIntExact((Long) resp.get("time_remaining")));
             }
         } catch (ParseException ex) {
@@ -34,7 +36,7 @@ public class PlayerJoinListener implements Listener {
     }
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent e) {
-        updateCanvas.post_request("http://localhost:8000/api/removep", "auth="+Rplace.authTokens.getOrDefault(e.getPlayer().getUniqueId(), null));
+        updateCanvas.post_request("https://place.heyn.live/api/removep", "auth="+Rplace.authTokens.getOrDefault(e.getPlayer().getUniqueId(), null));
         Rplace.authTokens.remove(e.getPlayer().getUniqueId());
         Rplace.cooldowns.remove(e.getPlayer().getUniqueId());
     }
