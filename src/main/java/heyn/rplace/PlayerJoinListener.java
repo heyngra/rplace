@@ -1,9 +1,12 @@
 package heyn.rplace;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
 
@@ -33,6 +36,16 @@ public class PlayerJoinListener implements Listener {
                 ex.printStackTrace();
             }
         });
+        if (e.getPlayer().getGameMode() != GameMode.CREATIVE) {
+            e.getPlayer().setGameMode(GameMode.CREATIVE);
+        }
+        if (!e.getPlayer().getInventory().contains(Material.STONE)) {
+            ItemStack i = new ItemStack(Material.STONE);
+            e.getPlayer().getInventory().addItem(i);
+        }
+        if (e.getPlayer().getLocation().getY() < 69) {
+            e.getPlayer().getLocation().setY(73);
+        }
     }
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent e) {
