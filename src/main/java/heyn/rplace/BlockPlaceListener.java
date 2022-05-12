@@ -1,11 +1,12 @@
 package heyn.rplace;
-import net.kyori.adventure.text.Component;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
@@ -30,36 +31,36 @@ public class BlockPlaceListener implements Listener {
     private final Inventory inv;
     private HashMap<Player, Block> placer = new HashMap<>();
     public BlockPlaceListener() {
-        this.inv = Bukkit.createInventory(null, 18, Component.text("Choose your color!"));
+        this.inv = Bukkit.createInventory(null, 18, "Choose your color!");
         initializeItems();
     }
     public void initializeItems() {
-        inv.addItem(createGuiItem(Material.WHITE_CONCRETE, Component.text("§fWhite"), Component.text("Choose your color: §fWhite")));
-        inv.addItem(createGuiItem(Material.ORANGE_CONCRETE, Component.text("§fOrange"), Component.text("Choose your color: §fOrange")));
-        inv.addItem(createGuiItem(Material.MAGENTA_CONCRETE, Component.text("§Magenta"), Component.text("Choose your color: §fMagenta")));
-        inv.addItem(createGuiItem(Material.LIGHT_BLUE_CONCRETE, Component.text("§fLight Blue"), Component.text("Choose your color: §fLight Blue")));
-        inv.addItem(createGuiItem(Material.YELLOW_CONCRETE, Component.text("§fYellow"), Component.text("Choose your color: §fYellow")));
-        inv.addItem(createGuiItem(Material.LIME_CONCRETE, Component.text("§fLime"), Component.text("Choose your color: §fLime")));
-        inv.addItem(createGuiItem(Material.PINK_CONCRETE, Component.text("§fPink"), Component.text("Choose your color: §fPink")));
-        inv.addItem(createGuiItem(Material.GRAY_CONCRETE, Component.text("§fGray"), Component.text("Choose your color: §fGray")));
-        inv.addItem(createGuiItem(Material.LIGHT_GRAY_CONCRETE, Component.text("§fLight Gray"), Component.text("Choose your color: §fLight Gray")));
-        inv.addItem(createGuiItem(Material.CYAN_CONCRETE, Component.text("§fCyan"), Component.text("Choose your color: §fCyan")));
-        inv.addItem(createGuiItem(Material.PURPLE_CONCRETE, Component.text("§fPurple"), Component.text("Choose your color: §fPurple")));
-        inv.addItem(createGuiItem(Material.BLUE_CONCRETE, Component.text("§fBlue"), Component.text("Choose your color: §fBlue")));
-        inv.addItem(createGuiItem(Material.BROWN_CONCRETE, Component.text("§fBrown"), Component.text("Choose your color: §fBrown")));
-        inv.addItem(createGuiItem(Material.GREEN_CONCRETE, Component.text("§fGreen"), Component.text("Choose your color: §fGreen")));
-        inv.addItem(createGuiItem(Material.RED_CONCRETE, Component.text("§fRed"), Component.text("Choose your color: §fRed")));
-        inv.addItem(createGuiItem(Material.BLACK_CONCRETE, Component.text("§fBlack"), Component.text("Choose your color: §fBlack")));
+        inv.addItem(createGuiItem(Material.WHITE_CONCRETE, new TextComponent("§fWhite"), new TextComponent("Choose your color: §fWhite")));
+        inv.addItem(createGuiItem(Material.ORANGE_CONCRETE, new TextComponent("§fOrange"), new TextComponent("Choose your color: §fOrange")));
+        inv.addItem(createGuiItem(Material.MAGENTA_CONCRETE, new TextComponent("§fMagenta"), new TextComponent("Choose your color: §fMagenta")));
+        inv.addItem(createGuiItem(Material.LIGHT_BLUE_CONCRETE, new TextComponent("§fLight Blue"), new TextComponent("Choose your color: §fLight Blue")));
+        inv.addItem(createGuiItem(Material.YELLOW_CONCRETE, new TextComponent("§fYellow"), new TextComponent("Choose your color: §fYellow")));
+        inv.addItem(createGuiItem(Material.LIME_CONCRETE, new TextComponent("§fLime"), new TextComponent("Choose your color: §fLime")));
+        inv.addItem(createGuiItem(Material.PINK_CONCRETE, new TextComponent("§fPink"), new TextComponent("Choose your color: §fPink")));
+        inv.addItem(createGuiItem(Material.GRAY_CONCRETE, new TextComponent("§fGray"), new TextComponent("Choose your color: §fGray")));
+        inv.addItem(createGuiItem(Material.LIGHT_GRAY_CONCRETE, new TextComponent("§fLight Gray"), new TextComponent("Choose your color: §fLight Gray")));
+        inv.addItem(createGuiItem(Material.CYAN_CONCRETE, new TextComponent("§fCyan"), new TextComponent("Choose your color: §fCyan")));
+        inv.addItem(createGuiItem(Material.PURPLE_CONCRETE, new TextComponent("§fPurple"), new TextComponent("Choose your color: §fPurple")));
+        inv.addItem(createGuiItem(Material.BLUE_CONCRETE, new TextComponent("§fBlue"), new TextComponent("Choose your color: §fBlue")));
+        inv.addItem(createGuiItem(Material.BROWN_CONCRETE, new TextComponent("§fBrown"), new TextComponent("Choose your color: §fBrown")));
+        inv.addItem(createGuiItem(Material.GREEN_CONCRETE, new TextComponent("§fGreen"), new TextComponent("Choose your color: §fGreen")));
+        inv.addItem(createGuiItem(Material.RED_CONCRETE, new TextComponent("§fRed"), new TextComponent("Choose your color: §fRed")));
+        inv.addItem(createGuiItem(Material.BLACK_CONCRETE, new TextComponent("§fBlack"), new TextComponent("Choose your color: §fBlack")));
     }
-    protected ItemStack createGuiItem(final Material material, final net.kyori.adventure.text.Component name, final net.kyori.adventure.text.Component lore) {
+    protected ItemStack createGuiItem(final Material material, final TextComponent name, final TextComponent lore) {
         final ItemStack item = new ItemStack(material, 1);
         final ItemMeta meta = item.getItemMeta();
 
         // Set the name of the item
-        meta.displayName(name);
+        meta.setDisplayName(name.getText());
 
         // Set the lore of the item
-        meta.lore(List.of(lore));
+        meta.setLore(List.of(lore.getText()));
 
         item.setItemMeta(meta);
 
@@ -93,19 +94,28 @@ public class BlockPlaceListener implements Listener {
         for (Integer i : concrete.colors.keySet()) {
             reversedHashMap.put(concrete.colors.get(i), i);
         }
-        String resp = updateCanvas.post_request("https://place.heyn.live/api/add", "color="+reversedHashMap.get(clickedItem.getType())+"&pos_x="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getX()+"&pos_z="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getZ()+"&auth="+Rplace.authTokens.get(Objects.requireNonNull(((Player) e.getWhoClicked()).getPlayer()).getUniqueId()));
-        try {
-            JSONObject jsresp = (JSONObject) Rplace.parser.parse(resp);
-            String status = (String) jsresp.get("status");
-            if (Objects.equals(status, "success")) {
-                Rplace.cooldowns.putIfAbsent(e.getWhoClicked().getUniqueId(), 1200);
-            } else if (Objects.equals(status, "On Cooldown!")) {
-                Rplace.cooldowns.putIfAbsent(e.getWhoClicked().getUniqueId(), Math.toIntExact((Long) jsresp.getOrDefault("time_remaining", 1200)));
+        Rplace.scheduler.runTaskAsynchronously(Rplace.plugin, () -> {
+            String resp = updateCanvas.post_request("https://place.heyn.live/api/add", "color="+reversedHashMap.get(clickedItem.getType())+"&pos_x="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getX()+"&pos_z="+placer.get(((Player) e.getWhoClicked()).getPlayer()).getZ()+"&auth="+Rplace.authTokens.get(Objects.requireNonNull(((Player) e.getWhoClicked()).getPlayer()).getUniqueId()));
+            try {
+                JSONObject jsresp = (JSONObject) Rplace.parser.parse(resp);
+                String status = (String) jsresp.get("status");
+                if (Objects.equals(status, "success")) {
+                    Rplace.cooldowns.putIfAbsent(e.getWhoClicked().getUniqueId(), Rplace.cooldown*20);
+                } else if (Objects.equals(status, "On Cooldown!")) {
+                    Rplace.cooldowns.putIfAbsent(e.getWhoClicked().getUniqueId(), Math.toIntExact((Long) jsresp.getOrDefault("time_remaining", 1200)));
+                }
+            } catch (ParseException ex) {
+                ex.printStackTrace();
             }
-        } catch (ParseException ex) {
-            ex.printStackTrace();
+            Rplace.scheduler.runTask(Rplace.plugin, updateCanvas::forcerun);
+        });
+
+        ((Player) e.getWhoClicked()).getPlayer().closeInventory();
+    }
+    @EventHandler
+    public void preventBreakingCanvas(BlockBreakEvent e) {
+        if (e.getBlock().getType().toString().contains("CONCRETE")) {
+            e.setCancelled(true);
         }
-        updateCanvas.forcerun();
-        inv.close();
     }
 }

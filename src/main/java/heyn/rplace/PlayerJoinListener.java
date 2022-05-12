@@ -13,31 +13,34 @@ import java.nio.charset.StandardCharsets;
 public class PlayerJoinListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
-        JSONObject resp = null;
-        try {
-            resp = (JSONObject) Rplace.parser.parse(updateCanvas.post_request("https://place.heyn.live/api/addp", "uuid="+e.getPlayer().getUniqueId()+"&serverUUID="+Rplace.serverUUID));
-        } catch (ParseException ex) {
-            ex.printStackTrace();
-        }
-        if (resp != null) {
-            Rplace.authTokens.putIfAbsent(e.getPlayer().getUniqueId(), URLEncoder.encode((String) resp.get("auth"), StandardCharsets.UTF_8));
-        } else {
-            e.getPlayer().sendMessage("Something went wrong!");
-        }
-        try {
-            resp = (JSONObject) Rplace.parser.parse(updateCanvas.get_request("https://place.heyn.live/api/checkcd?auth="+Rplace.authTokens.getOrDefault(e.getPlayer().getUniqueId(), null)));
-            if (((String) resp.get("status")).equals("On Cooldown!")) {
-                Rplace.cooldowns.remove(e.getPlayer().getUniqueId());
-                Rplace.cooldowns.putIfAbsent(e.getPlayer().getUniqueId(), Math.toIntExact((Long) resp.get("time_remaining")));
+        Rplace.scheduler.runTaskAsynchronously(Rplace.plugin, () -> {
+            JSONObject resp = null;
+            try {
+                resp = (JSONObject) Rplace.parser.parse(updateCanvas.post_request("https://place.heyn.live/api/addp", "uuid="+e.getPlayer().getUniqueId()+"&serverUUID="+Rplace.serverUUID));
+            } catch (ParseException ex) {
+                ex.printStackTrace();
             }
-        } catch (ParseException ex) {
-            ex.printStackTrace();
-        }
+            if (resp != null) {
+                Rplace.authTokens.putIfAbsent(e.getPlayer().getUniqueId(), URLEncoder.encode((String) resp.get("auth"), StandardCharsets.UTF_8));
+            }
+            try {
+                resp = (JSONObject) Rplace.parser.parse(updateCanvas.get_request("https://place.heyn.live/api/checkcd?auth="+Rplace.authTokens.getOrDefault(e.getPlayer().getUniqueId(), null)));
+                if (((String) resp.get("status")).equals("On Cooldown!")) {
+                    Rplace.cooldowns.remove(e.getPlayer().getUniqueId());
+                    Rplace.cooldowns.putIfAbsent(e.getPlayer().getUniqueId(), Math.toIntExact((Long) resp.get("time_remaining")));
+                }
+            } catch (ParseException ex) {
+                ex.printStackTrace();
+            }
+        });
     }
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent e) {
-        updateCanvas.post_request("https://place.heyn.live/api/removep", "auth="+Rplace.authTokens.getOrDefault(e.getPlayer().getUniqueId(), null));
-        Rplace.authTokens.remove(e.getPlayer().getUniqueId());
-        Rplace.cooldowns.remove(e.getPlayer().getUniqueId());
+            Rplace.scheduler.runTaskAsynchronously(Rplace.plugin, () -> {
+            updateCanvas.post_request("https://place.heyn.live/api/removep", "auth="+Rplace.authTokens.getOrDefault(e.getPlayer().getUniqueId(), null));
+            Rplace.authTokens.remove(e.getPlayer().getUniqueId());
+            Rplace.cooldowns.remove(e.getPlayer().getUniqueId());
+            }
+        );
     }
 }

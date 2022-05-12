@@ -16,35 +16,41 @@ import java.util.UUID;
 public final class Rplace extends JavaPlugin {
 
     public static Rplace plugin;
-    public BukkitScheduler scheduler;
+    public static BukkitScheduler scheduler;
     public BukkitTask updater;
+    public static int latest_history = -1;
     public BukkitTask cooldowner;
     public static HttpClient client;
     public static JSONParser parser = new JSONParser();
-    public static final UUID serverUUID;
+    public static UUID serverUUID;
     public static HashMap<UUID, String> authTokens = new HashMap<>();
     public static HashMap<UUID, Integer> cooldowns = new HashMap<>();
-    static {
-        UUID serverUUID1;
-        try {
-            serverUUID1 = UUID.fromString((String) (((JSONObject) parser.parse(updateCanvas.get_request("https://place.heyn.live/api/serverid"))).get("uuid")));
-        } catch (ParseException e) {
-            serverUUID1 = null;
-            e.printStackTrace();
-        }
-        serverUUID = serverUUID1;
-    }
+    public static int cooldown;
+
 
     @Override
     public void onEnable() {
         plugin = this;
         client = HttpClient.newHttpClient();
-        this.scheduler = plugin.getServer().getScheduler();
-        updater = scheduler.runTaskTimer(plugin, new updateCanvas(), 0L, 30L);
+        scheduler = plugin.getServer().getScheduler();
+        updater = scheduler.runTaskTimerAsynchronously(plugin, new updateCanvas(), 0L, 30L);
         cooldowner = scheduler.runTaskTimer(plugin, new Cooldowner(), 0L, 1L);
+        scheduler.runTaskAsynchronously(Rplace.plugin, () -> {
+            UUID serverUUID1;
+            int cooldown1;
+            try {
+                serverUUID1 = UUID.fromString((String) (((JSONObject) parser.parse(updateCanvas.get_request("https://place.heyn.live/api/serverid"))).get("uuid")));
+                cooldown1 = Math.toIntExact((Long) ((JSONObject) parser.parse(updateCanvas.get_request("https://place.heyn.live/api/getcooldown"))).getOrDefault("cooldown", 60));
+            } catch (ParseException e) {
+                serverUUID1 = null;
+                cooldown1 = 60;
+                e.printStackTrace();
+            }
+            serverUUID = serverUUID1;
+            cooldown = cooldown1;
+        });
         getServer().getPluginManager().registerEvents(new BlockPlaceListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
-
     }
 
     @Override
