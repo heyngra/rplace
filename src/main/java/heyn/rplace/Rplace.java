@@ -16,6 +16,7 @@ import java.util.UUID;
 public final class Rplace extends JavaPlugin {
 
     public static Rplace plugin;
+    public static String version = "1.0.0";
     public static BukkitScheduler scheduler;
     public BukkitTask updater;
     public static int latest_history = -1;
@@ -31,6 +32,7 @@ public final class Rplace extends JavaPlugin {
     @Override
     public void onEnable() {
         plugin = this;
+        autoUpdate.autoUpdate();
         client = HttpClient.newHttpClient();
         scheduler = plugin.getServer().getScheduler();
         updater = scheduler.runTaskTimerAsynchronously(plugin, new updateCanvas(), 0L, 30L);
